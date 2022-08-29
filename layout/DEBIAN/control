@@ -6,4 +6,4 @@ Description: An awesome MobileSubstrate tweak!
 Maintainer: ios
 Author: ios
 Section: Tweaks
-Depends: mobilesubstrate (>= 0.9.5000)
+Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 14.0)
