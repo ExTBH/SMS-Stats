@@ -23,7 +23,7 @@
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemClose target:self
                                                                         action:@selector(removeSettingsVC:)];
 
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"All Time" menu:[self menuForBarItem]];
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Filter" menu:[self menuForBarItem]];
 }
 
 - (UIMenu*)menuForBarItem{
@@ -132,23 +132,65 @@
 - (nonnull UITableViewCell *)tableView:(nonnull UITableView *)tableView cellForRowAtIndexPath:(nonnull NSIndexPath *)indexPath {
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"StatsCell"];
     cell.backgroundColor = UIColor.clearColor;
-    cell.textLabel.text = @"Weeee";
+    UILabel *count = [UILabel new];
 
+    
 
+    switch(indexPath.section){
+        case 0:
+            switch(indexPath.row){
+                case 0:
+                    cell.textLabel.text = @"Total";
+                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message;"]];
+                    break;
+                case 1:
+                    cell.textLabel.text = @"Sent";
+                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1;"]];
+                    break;
+                case 2:
+                    cell.textLabel.text = @"Received";
+                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE is_from_me = 0;"]];
+                    break;
+            }
+            break;
+        case 1:
+            switch(indexPath.row){
+                case 0:
+                    cell.textLabel.text = @"Total";
+                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS'"]];
+                    break;
+                case 1:
+                    cell.textLabel.text = @"Sent";
+                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 1;"]];
+                    break;
+                case 2:
+                    cell.textLabel.text = @"Received";
+                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 0;"]];
+                    break;
+            }
+            break;
+        case 2:
+            switch(indexPath.row){
+                case 0:
+                    cell.textLabel.text = @"Total";
+                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage'"]];
+                    break;
+                case 1:
+                    cell.textLabel.text = @"Sent";
+                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 1;"]];
+                    break;
+                case 2:
+                    cell.textLabel.text = @"Received";
+                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 0;"]];
+                    break;
+            }
+            break;
+    }
+
+    [count sizeToFit];
+    cell.accessoryView = count;
     return cell;
 }
 
-
-
-// Alow for copying the data
-- (UIContextMenuConfiguration *)tableView:(UITableView *)tableView contextMenuConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath point:(CGPoint)point{
-    UIAction *copy = [UIAction actionWithTitle:@"Copy" image:[UIImage systemImageNamed:@"doc.on.doc"] identifier:nil handler:^(UIAction *handler) {
-            //TODO:  - write the copy part
-        }];
-    UIMenu *menu = [UIMenu menuWithTitle:@"" children:@[copy]];
-    UIContextMenuConfiguration *menuConfig = [UIContextMenuConfiguration configurationWithIdentifier:nil previewProvider:nil actionProvider:^(NSArray *suggestedActions) { return menu;}
-    ];
-    return  menuConfig;
-}
 
 @end

@@ -27,9 +27,8 @@
 
 %new
 -(void)presentJDEViewController:(id)sender{
-	[SSDBManager statsForGUID:nil];
     SSViewController *statsVC = [SSViewController new];
-    statsVC.title = @"Ststs";
+    statsVC.title = @"SMS Stats";
 	UINavigationController *navVC = [[UINavigationController alloc] initWithRootViewController:statsVC];
     [self presentViewController:navVC animated:YES completion:nil];
 }
