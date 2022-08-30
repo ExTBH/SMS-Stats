@@ -3,7 +3,9 @@
 
 // Private declarations; this class only.
 @interface SSViewController()  <UITableViewDelegate, UITableViewDataSource>
+
 @property (strong,nonatomic) UITableView *SSTableView;
+@property (nonatomic, assign) int curentFilter; // 0 = All, 1 = 7Days, 2 = 30Days
 @end
 
 @implementation SSViewController
@@ -24,20 +26,38 @@
                                                                         action:@selector(removeSettingsVC:)];
 
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Filter" menu:[self menuForBarItem]];
+    self.curentFilter = 0;
 }
-
+// To filter the Stats based on time
 - (UIMenu*)menuForBarItem{
         UIAction *allTime = [UIAction actionWithTitle:@"All time" image:nil identifier:nil handler:^(UIAction *handler) {
-            //TODO:  - write the copy part
-            
+            //TODO:  - Logic
+            self.curentFilter = 0;
+            self.navigationItem.leftBarButtonItem.menu = [self menuForBarItem];
         }];
         UIAction *lastWeek = [UIAction actionWithTitle:@"Last 7 days" image:nil identifier:nil handler:^(UIAction *handler) {
-            //TODO:  - write the copy part
-            self.navigationItem.rightBarButtonItem.title = @"Last 7 days";
+            //TODO:  - Logic
+            self.curentFilter = 1;
+            self.navigationItem.leftBarButtonItem.menu = [self menuForBarItem];
         }];
         UIAction *lastMonth = [UIAction actionWithTitle:@"Last 30 days" image:nil identifier:nil handler:^(UIAction *handler) {
-            //TODO:  - write the copy part
+            //TODO:  - Logic
+            self.curentFilter = 2;
+            self.navigationItem.leftBarButtonItem.menu = [self menuForBarItem];
+            
         }];
+
+    switch(self.curentFilter){
+        case 0:
+            allTime.image = [UIImage systemImageNamed:@"checkmark"];
+            break;
+        case 1:
+            lastWeek.image = [UIImage systemImageNamed:@"checkmark"];
+            break;
+        case 2:
+            lastMonth.image = [UIImage systemImageNamed:@"checkmark"];
+            break;
+    }
     return [UIMenu menuWithTitle:@"" children:@[allTime, lastWeek, lastMonth]];
 }
 - (void)configureTableview{
