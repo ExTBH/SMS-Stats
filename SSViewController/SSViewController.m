@@ -1,6 +1,11 @@
 #import "SSViewController.h"
 
 
+
+double nanoSecondsFromSeconds(double seconds){
+    return seconds * 1000000000;
+}
+
 // Private declarations; this class only.
 @interface SSViewController()  <UITableViewDelegate, UITableViewDataSource>
 
@@ -31,20 +36,21 @@
 // To filter the Stats based on time
 - (UIMenu*)menuForBarItem{
         UIAction *allTime = [UIAction actionWithTitle:@"All time" image:nil identifier:nil handler:^(UIAction *handler) {
-            //TODO:  - Logic
+
             self.curentFilter = 0;
             self.navigationItem.leftBarButtonItem.menu = [self menuForBarItem];
+            [self reloadRows];
         }];
         UIAction *lastWeek = [UIAction actionWithTitle:@"Last 7 days" image:nil identifier:nil handler:^(UIAction *handler) {
-            //TODO:  - Logic
+
             self.curentFilter = 1;
             self.navigationItem.leftBarButtonItem.menu = [self menuForBarItem];
+            [self reloadRows];
         }];
         UIAction *lastMonth = [UIAction actionWithTitle:@"Last 30 days" image:nil identifier:nil handler:^(UIAction *handler) {
-            //TODO:  - Logic
             self.curentFilter = 2;
             self.navigationItem.leftBarButtonItem.menu = [self menuForBarItem];
-            
+            [self reloadRows];
         }];
 
     switch(self.curentFilter){
@@ -81,6 +87,115 @@
 
 -(void)removeSettingsVC:(id)sender{
     [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)reloadRows{
+    NSMutableArray<NSIndexPath*> *indexPaths = [NSMutableArray new];
+    NSInteger sections = self.SSTableView.numberOfSections;
+    for(int i = 0; i <= sections -1; i++){
+        NSInteger rows = [self.SSTableView numberOfRowsInSection:i];
+        for(int j = 0; j <= rows - 1; j++){
+            [indexPaths addObject:[NSIndexPath indexPathForRow:j inSection:i]];
+        }
+    }
+    [self.SSTableView reloadRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationAutomatic];
+
+}
+
+- (NSString*)textForCellAtIndexPath:(NSIndexPath*)indexPath{
+    switch(indexPath.section){
+        case 0:
+            switch(indexPath.row){
+                case 0:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message;"]];
+                    break;
+                case 1:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1;"]];
+                    break;
+                case 2:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE is_from_me = 0;"]];
+                    break;
+            }
+            break;
+        case 1:
+            switch(indexPath.row){
+                case 0:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS'"]];
+                    break;
+                case 1:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 1;"]];
+                    break;
+                case 2:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 0;"]];
+                    break;
+            }
+            break;
+        case 2:
+            switch(indexPath.row){
+                case 0:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage'"]];
+                    break;
+                case 1:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 1;"]];
+                    break;
+                case 2:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 0;"]];
+                    break;
+            }
+            break;
+    }
+    return nil;
+
+}
+
+- (NSString*)textForCellAtIndexPath:(NSIndexPath*)indexPath filterWithDays:(int)days{
+    // Getting past time in nanoSeconds since the DB use that
+    NSDate *filterDate = [NSDate dateWithTimeIntervalSinceNow:-86400 * days];
+    double filterAsNano = nanoSecondsFromSeconds([filterDate timeIntervalSinceReferenceDate]);
+
+    switch(indexPath.section){
+        case 0:
+            switch(indexPath.row){
+                case 0:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE date >= %0.f;", filterAsNano]]];
+                    break;
+                case 1:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1 AND date >= %0.f;", filterAsNano]]];
+                    break;
+                case 2:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 0 AND date >= %0.f;", filterAsNano]]];
+                    break;
+            }
+            break;
+        case 1:
+            switch(indexPath.row){
+                case 0:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND date >= %0.f;", filterAsNano]]];
+                    break;
+                case 1:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 1 AND date >= %0.f;", filterAsNano]]];
+                    break;
+                case 2:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 0 AND date >= %0.f;", filterAsNano]]];
+                    break;
+            }
+            break;
+        case 2:
+            switch(indexPath.row){
+                case 0:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND date >= %0.f;", filterAsNano]]];
+                    break;
+                case 1:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 1 AND date >= %0.f;", filterAsNano]]];
+                    break;
+                case 2:
+                    return [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 0 AND date >= %0.f;", filterAsNano]]];
+                    break;
+            }
+            break;
+    }
+    return nil;
+
 }
 
 
@@ -154,58 +269,30 @@
     cell.backgroundColor = UIColor.clearColor;
     UILabel *count = [UILabel new];
 
-    
 
-    switch(indexPath.section){
+    switch(indexPath.row){
         case 0:
-            switch(indexPath.row){
-                case 0:
-                    cell.textLabel.text = @"Total";
-                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message;"]];
-                    break;
-                case 1:
-                    cell.textLabel.text = @"Sent";
-                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1;"]];
-                    break;
-                case 2:
-                    cell.textLabel.text = @"Received";
-                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE is_from_me = 0;"]];
-                    break;
-            }
+            cell.textLabel.text = @"Total";
             break;
         case 1:
-            switch(indexPath.row){
-                case 0:
-                    cell.textLabel.text = @"Total";
-                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS'"]];
-                    break;
-                case 1:
-                    cell.textLabel.text = @"Sent";
-                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 1;"]];
-                    break;
-                case 2:
-                    cell.textLabel.text = @"Received";
-                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 0;"]];
-                    break;
-            }
+            cell.textLabel.text = @"Sent";
             break;
         case 2:
-            switch(indexPath.row){
-                case 0:
-                    cell.textLabel.text = @"Total";
-                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage'"]];
-                    break;
-                case 1:
-                    cell.textLabel.text = @"Sent";
-                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 1;"]];
-                    break;
-                case 2:
-                    cell.textLabel.text = @"Received";
-                    count.text = [NSString stringWithFormat:@"%u",[SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 0;"]];
-                    break;
-            }
+            cell.textLabel.text = @"Received";
             break;
     }
+    count.text = [self textForCellAtIndexPath:indexPath];
+    switch(self.curentFilter){
+    case 0:
+        count.text = [self textForCellAtIndexPath:indexPath];
+        break;
+    case 1:
+        count.text = [self textForCellAtIndexPath:indexPath filterWithDays:7];
+        break;
+    case 2:
+        count.text = [self textForCellAtIndexPath:indexPath filterWithDays:30];
+        break;
+}
 
     [count sizeToFit];
     cell.accessoryView = count;
