@@ -8,31 +8,31 @@
 
 @implementation SSDBManager
 
-+ (uint)rowCountForQuery:(NSString*)query{
++ (NSString*)rowCountForQuery:(NSString*)query{
 
     sqlite3 *smsDb;
     int dbOpenResult = sqlite3_open_v2(dbPath, &smsDb, SQLITE_OPEN_READONLY, NULL);;
     if(dbOpenResult != SQLITE_OK){
         NSLog(@"SSStats - Can't open Database - %s", sqlite3_errmsg(smsDb));
-        return -1;
+        return nil;
     }
     sqlite3_stmt *stmt;
 
     int rc = sqlite3_prepare_v2(smsDb, [query UTF8String], -1, &stmt, NULL);
     if(rc != SQLITE_OK){
         NSLog(@"SSStats - IDK something wrong - %s", sqlite3_errmsg(smsDb));
-        return -1;
+        return nil;
     }
     rc = sqlite3_step(stmt);
     if(rc != SQLITE_ROW){
         NSLog(@"SSStats - no rows found? - %s", sqlite3_errmsg(smsDb));
-        return -1;
+        return nil;
     }
     uint rowCount = sqlite3_column_int(stmt, 0);
 
 
     sqlite3_close(smsDb);
-    return rowCount;
+    return [NSString stringWithFormat:@"%u", rowCount];
 }
 
 @end
