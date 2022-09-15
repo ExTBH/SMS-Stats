@@ -1,9 +1,9 @@
-Package: com.ios.smsstats
-Name: SMSStats
-Version: 0.0.3
+Package: dev.extbh.smsstats3
+Name: SMSStats 3
+Version: 0.0.4
 Architecture: iphoneos-arm
 Description: An awesome MobileSubstrate tweak!
-Maintainer: ios
-Author: ios
+Maintainer: ExTBH
+Author: ExTBH <natheer@extbh.dev>
 Section: Tweaks
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 14.0)
