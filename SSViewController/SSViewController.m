@@ -11,6 +11,7 @@ double nanoSecondsFromSeconds(double seconds){
 
 @property (strong,nonatomic) UITableView *SSTableView;
 @property (nonatomic, assign) int curentFilter; // 0 = All, 1 = 7Days, 2 = 30Days
+@property (nonatomic, strong) NSString *service;
 @end
 
 @implementation SSViewController
@@ -19,8 +20,15 @@ double nanoSecondsFromSeconds(double seconds){
     [super viewDidLoad];
     [self configureLookAndBar];
     [self configureTableview];
+    if([self.guid hasPrefix:@"SMS"]){
+        self.service = @"SMS";
+    }
+    else {
+        self.service = @"iMessage";
+    }
 
 }
+
 
 // MARK: - General Methods
 - (void)configureLookAndBar{
@@ -66,6 +74,7 @@ double nanoSecondsFromSeconds(double seconds){
     }
     return [UIMenu menuWithTitle:@"" children:@[allTime, lastWeek, lastMonth]];
 }
+
 - (void)configureTableview{
     self.SSTableView = [[UITableView alloc] initWithFrame:CGRectNull style:UITableViewStyleGrouped];
     self.SSTableView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -104,6 +113,7 @@ double nanoSecondsFromSeconds(double seconds){
 
 - (NSString*)textForCellAtIndexPath:(NSIndexPath*)indexPath{
     if(self.guid == nil){
+        if(indexPath.section == 1){self.service = @"SMS";} else {self.service = @"iMessage";}
         switch(indexPath.section){
             case 0:
                 switch(indexPath.row){
@@ -119,28 +129,16 @@ double nanoSecondsFromSeconds(double seconds){
                 }
                 break;
             case 1:
-                switch(indexPath.row){
-                    case 0:
-                        return [SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS'"];
-                        break;
-                    case 1:
-                        return [SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 1;"];
-                        break;
-                    case 2:
-                        return [SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 0;"];
-                        break;
-                }
-                break;
             case 2:
                 switch(indexPath.row){
                     case 0:
-                        return [SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage'"];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@'", self.service]];
                         break;
                     case 1:
-                        return [SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 1;"];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@' AND is_from_me = 1;", self.service]];
                         break;
                     case 2:
-                        return [SSDBManager rowCountForQuery:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 0;"];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@' AND is_from_me = 0;", self.service]];
                         break;
                 }
                 break;
@@ -152,39 +150,13 @@ double nanoSecondsFromSeconds(double seconds){
             case 0:
                 switch(indexPath.row){
                     case 0:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid = '%@');", self.guid]];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@' AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.service, self.guid]];
                         break;
                     case 1:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1 AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.guid]];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1 and service = '%@' AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.service, self.guid]];
                         break;
                     case 2:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 0 AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.guid]];
-                        break;
-                }
-                break;
-            case 1:
-                switch(indexPath.row){
-                    case 0:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.guid]];
-                        break;
-                    case 1:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1 and service = 'SMS' AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.guid]];
-                        break;
-                    case 2:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1 and service = 'SMS' AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.guid]];
-                        break;
-                }
-                break;
-            case 2:
-                switch(indexPath.row){
-                    case 0:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.guid]];
-                        break;
-                    case 1:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1 and service = 'iMessage' AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.guid]];
-                        break;
-                    case 2:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1 and service = 'iMessage' AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.guid]];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 0 and service = '%@' AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.service, self.guid]];
                         break;
                 }
                 break;
@@ -198,6 +170,7 @@ double nanoSecondsFromSeconds(double seconds){
     NSDate *filterDate = [NSDate dateWithTimeIntervalSinceNow:-86400 * days];
     double filterAsNano = nanoSecondsFromSeconds([filterDate timeIntervalSinceReferenceDate]);
     if(self.guid == nil){
+        if(indexPath.section == 1){self.service = @"SMS";} else {self.service = @"iMessage";}
         switch(indexPath.section){
             case 0:
                 switch(indexPath.row){
@@ -213,28 +186,16 @@ double nanoSecondsFromSeconds(double seconds){
                 }
                 break;
             case 1:
-                switch(indexPath.row){
-                    case 0:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND date >= %0.f;", filterAsNano]];
-                        break;
-                    case 1:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 1 AND date >= %0.f;", filterAsNano]];
-                        break;
-                    case 2:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 0 AND date >= %0.f;", filterAsNano]];
-                        break;
-                }
-                break;
             case 2:
                 switch(indexPath.row){
                     case 0:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND date >= %0.f;", filterAsNano]];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@' AND date >= %0.f;", self.service, filterAsNano]];
                         break;
                     case 1:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 1 AND date >= %0.f;", filterAsNano]];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@' AND is_from_me = 1 AND date >= %0.f;", self.service, filterAsNano]];
                         break;
                     case 2:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 0 AND date >= %0.f;", filterAsNano]];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@' AND is_from_me = 0 AND date >= %0.f;", self.service, filterAsNano]];
                         break;
                 }
                 break;
@@ -246,42 +207,13 @@ double nanoSecondsFromSeconds(double seconds){
             case 0:
                 switch(indexPath.row){
                     case 0:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", filterAsNano, self.guid]];
-                        
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@' AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.service, filterAsNano, self.guid]];
                         break;
                     case 1:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 1 AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", filterAsNano, self.guid]];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@' AND is_from_me = 1 AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.service, filterAsNano, self.guid]];
                         break;
                     case 2:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE is_from_me = 0 AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", filterAsNano, self.guid]];
-                        break;
-                }
-                break;
-            case 1:
-                switch(indexPath.row){
-                    case 0:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", filterAsNano, self.guid]];
-                        
-                        break;
-                    case 1:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 1 AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", filterAsNano, self.guid]];
-                        break;
-                    case 2:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'SMS' AND is_from_me = 0 AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", filterAsNano, self.guid]];
-                        break;
-                }
-                break;
-            case 2:
-                switch(indexPath.row){
-                    case 0:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", filterAsNano, self.guid]];
-                        
-                        break;
-                    case 1:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 1 AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", filterAsNano, self.guid]];
-                        break;
-                    case 2:
-                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = 'iMessage' AND is_from_me = 0 AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", filterAsNano, self.guid]];
+                        return [SSDBManager rowCountForQuery:[NSString stringWithFormat:@"SELECT COUNT(*) FROM message WHERE service = '%@' AND is_from_me = 0 AND date >= %0.f AND ROWID IN (SELECT message_id FROM chat_message_join WHERE chat_id IN (SELECT ROWID FROM chat WHERE guid LIKE  '%@'));", self.service, filterAsNano, self.guid]];
                         break;
                 }
                 break;
@@ -290,7 +222,12 @@ double nanoSecondsFromSeconds(double seconds){
 }
 
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView { return 3; }
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView { 
+    if(!self.guid){
+        return 3;
+    }
+    return 1;
+    }
 
 - (NSInteger)tableView:(nonnull UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     return 3;
@@ -302,18 +239,24 @@ double nanoSecondsFromSeconds(double seconds){
     UILabel *label = [UILabel new];
     label.translatesAutoresizingMaskIntoConstraints = NO;
     [headerView addSubview:label];
-    
-    switch (section) {
-        case 0:
-            label.text = @"Total";
-            break;
-        case 1:
-            label.text = @"SMS";
-            break;
-        case 2:
-            label.text = @"iMessage";
-            break;
-    }    label.textColor = UIColor.secondaryLabelColor;
+    if(!self.guid){
+        switch (section) {
+            case 0:
+                label.text = @"Total";
+                break;
+            case 1:
+                label.text = @"SMS";
+                break;
+            case 2:
+                label.text = @"iMessage";
+                break;
+        }
+    }
+    else{
+        label.text = self.service;
+    }
+
+    label.textColor = UIColor.secondaryLabelColor;
     
     [NSLayoutConstraint activateConstraints:@[
         [label.leadingAnchor constraintEqualToAnchor:headerView.safeAreaLayoutGuide.leadingAnchor constant:20],
@@ -324,17 +267,14 @@ double nanoSecondsFromSeconds(double seconds){
     return  headerView;
 }
 - (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section{
-    switch (section) {
-        case 2:
-            return 33;
-            break;
-        default:
-            return 22;
-    }   
+    if([self numberOfSectionsInTableView:tableView] -1 == section){
+        return 33;
+    }
+    return 22;
 
 }
 - (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section{
-    if(section == 2){
+    if([self numberOfSectionsInTableView:tableView] -1 == section){
         UIView *footerView = [UIView new];
         footerView.backgroundColor = UIColor.clearColor;
         UILabel *label = [UILabel new];
